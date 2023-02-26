@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
+	t "github.com/mmmcclimon/toggl-go/internal/toggl"
 	"github.com/spf13/cobra"
 )
 
@@ -17,5 +19,18 @@ var timerCmd = &cobra.Command{
 }
 
 func runTimer(cmd *cobra.Command, args []string) {
-	fmt.Println("timer")
+	timer, err := toggl.CurrentTimer()
+
+	if err != nil {
+		switch err {
+		case t.ErrNoTimer:
+			fmt.Println("You don't have a running timer!")
+			return
+		default:
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+	}
+
+	fmt.Printf("%s so far: %s\n", timer.Duration(), timer.OnelineDesc())
 }
