@@ -4,17 +4,31 @@ import (
 	"fmt"
 	"os"
 
+	t "github.com/mmmcclimon/toggl-go/internal/toggl"
 	"github.com/spf13/cobra"
 )
 
+var toggl *t.Toggl
+
 var rootCmd = &cobra.Command{
-	Use:               "toggl",
-	Short:             "whatcha up to?",
-	CompletionOptions: cobra.CompletionOptions{DisableDefaultCmd: true},
-	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Help()
-		// fmt.Println("hrm")
+	Use: "toggl",
+
+	// root command is only interesting as a container
+	Run: func(cmd *cobra.Command, args []string) { cmd.Help() },
+
+	// read config, etc.
+	PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
+		if !cmd.HasParent() {
+			// we're the root, only exist for help
+			return nil
+		}
+
+		toggl = t.NewToggl()
+		return toggl.ReadConfig()
 	},
+
+	// do not generate a "completion" command, jeez
+	CompletionOptions: cobra.CompletionOptions{DisableDefaultCmd: true},
 }
 
 func Execute() {
