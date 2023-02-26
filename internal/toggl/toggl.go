@@ -1,13 +1,11 @@
 package toggl
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/BurntSushi/toml"
 )
@@ -62,38 +60,43 @@ func urlFor(endpoint string, args ...any) string {
 	return fmt.Sprintf("https://api.track.toggl.com/api/v9"+endpoint, args...)
 }
 
-type timerResponse struct {
-	Id          int
-	Description string
-	Duration    int64
-	Start       time.Time
-	End         time.Time
-	ProjectId   int `json:"project_id"`
-	WorkspaceId int `json:"workspace_id"`
-	Tags        []string
-}
-
 func (t *Toggl) CurrentTimer() (*Timer, error) {
-	body, err := t.get(urlFor("/me/time_entries/current"))
+	res, err := t.get(urlFor("/me/time_entries/current"))
 
 	if err != nil {
 		return nil, err
 	}
 
-	defer body.Close()
-	decoder := json.NewDecoder(body)
+	defer res.Body.Close()
+	return timerFromResponseBody(res.Body)
+}
 
-	var data timerResponse
-	if err := decoder.Decode(&data); err != nil {
+func (t *Toggl) StopCurrentTimer() (*Timer, error) {
+	timer, err := t.CurrentTimer()
+	if err != nil {
 		return nil, err
 	}
 
-	timer := data.toTimer()
-	if timer.Id == 0 {
-		return nil, ErrNoTimer
+	url := urlFor("/workspaces/%d/time_entries/%d/stop", timer.WorkspaceId, timer.Id)
+
+	req, err := http.NewRequest(http.MethodPatch, url, nil)
+	if err != nil {
+		panic(err) // should not happen
 	}
 
-	return timer, nil
+	res, err := t.doRequest(req)
+	if err != nil {
+		return nil, fmt.Errorf("bad patch: %w", err)
+	}
+
+	defer res.Body.Close()
+
+	if res.StatusCode != 200 {
+		fmt.Fprintln(os.Stderr, "bad response from patch:")
+		dumpResponseAndExit(res)
+	}
+
+	return timerFromResponseBody(res.Body)
 }
 
 func (t *Toggl) AbortCurrentTimer() (*Timer, error) {
@@ -110,6 +113,10 @@ func (t *Toggl) AbortCurrentTimer() (*Timer, error) {
 	}
 
 	res, err := t.doRequest(req)
+
+	if err != nil {
+		return nil, fmt.Errorf("bad abort: %w", err)
+	}
 
 	if res.StatusCode != 200 {
 		fmt.Fprintln(os.Stderr, "bad response from delete:")

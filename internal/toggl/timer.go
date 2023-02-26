@@ -1,7 +1,9 @@
 package toggl
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"strings"
 	"time"
 )
@@ -15,15 +17,38 @@ type Timer struct {
 	projectId   int
 }
 
-func (r timerResponse) toTimer() *Timer {
-	return &Timer{
-		Id:          r.Id,
-		Description: r.Description,
-		Tags:        r.Tags,
-		WorkspaceId: r.WorkspaceId,
-		duration:    r.Duration,
-		projectId:   r.ProjectId,
+func timerFromResponseBody(body io.Reader) (*Timer, error) {
+	decoder := json.NewDecoder(body)
+
+	// we decode here into a struct with all public members, then hide some of
+	// them publicly
+	var data struct {
+		Id          int
+		Description string
+		Duration    int64
+		Start       time.Time
+		End         time.Time
+		ProjectId   int `json:"project_id"`
+		WorkspaceId int `json:"workspace_id"`
+		Tags        []string
 	}
+
+	if err := decoder.Decode(&data); err != nil {
+		return nil, err
+	}
+
+	if data.Id == 0 {
+		return nil, ErrNoTimer
+	}
+
+	return &Timer{
+		Id:          data.Id,
+		Description: data.Description,
+		Tags:        data.Tags,
+		WorkspaceId: data.WorkspaceId,
+		duration:    data.Duration,
+		projectId:   data.ProjectId,
+	}, nil
 }
 
 func (t Timer) Duration() time.Duration {

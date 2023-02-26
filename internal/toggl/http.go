@@ -2,7 +2,6 @@ package toggl
 
 import (
 	"errors"
-	"io"
 	"net/http"
 	"os"
 )
@@ -25,7 +24,7 @@ func (t *Toggl) doRequest(req *http.Request) (*http.Response, error) {
 	return res, nil
 }
 
-func (t *Toggl) get(url string) (io.ReadCloser, error) {
+func (t *Toggl) get(url string) (*http.Response, error) {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		panic(err) // should not happen
@@ -36,7 +35,7 @@ func (t *Toggl) get(url string) (io.ReadCloser, error) {
 		return nil, err
 	}
 
-	return res.Body, nil
+	return res, nil
 }
 
 func dumpResponseAndExit(res *http.Response) {
