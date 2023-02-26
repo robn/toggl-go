@@ -10,6 +10,7 @@ type Timer struct {
 	Id          int
 	Description string
 	Tags        []string
+	WorkspaceId int
 	duration    int64
 	projectId   int
 }
@@ -19,6 +20,7 @@ func (r timerResponse) toTimer() *Timer {
 		Id:          r.Id,
 		Description: r.Description,
 		Tags:        r.Tags,
+		WorkspaceId: r.WorkspaceId,
 		duration:    r.Duration,
 		projectId:   r.ProjectId,
 	}

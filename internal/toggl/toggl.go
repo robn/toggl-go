@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -29,7 +28,6 @@ func NewToggl() *Toggl {
 	}
 }
 
-var ErrBadStatus = errors.New("bad http status")
 var ErrNoTimer = errors.New("no running timer")
 
 // ReadConfig reads the toggl config file, and returns an error if it can't
@@ -59,24 +57,9 @@ func (t *Toggl) ReadConfig() error {
 	return nil
 }
 
-func (t *Toggl) get(url string) (io.ReadCloser, error) {
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		panic(err) // should not happen
-	}
-
-	req.SetBasicAuth(t.cfg.ApiToken, "api_token")
-	req.Header.Add("Accept", "application/json")
-
-	res, err := t.client.Do(req)
-
-	if err != nil {
-		return nil, err
-	} else if res.StatusCode >= 400 {
-		return nil, ErrBadStatus
-	}
-
-	return res.Body, nil
+func urlFor(endpoint string, args ...any) string {
+	// https://api.track.toggl.com/api/v9/workspaces/{workspace_id}/time_entries/{time_entry_id}
+	return fmt.Sprintf("https://api.track.toggl.com/api/v9"+endpoint, args...)
 }
 
 type timerResponse struct {
@@ -85,12 +68,13 @@ type timerResponse struct {
 	Duration    int64
 	Start       time.Time
 	End         time.Time
-	ProjectId   int
+	ProjectId   int `json:"project_id"`
+	WorkspaceId int `json:"workspace_id"`
 	Tags        []string
 }
 
 func (t *Toggl) CurrentTimer() (*Timer, error) {
-	body, err := t.get("https://api.track.toggl.com/api/v9/me/time_entries/current")
+	body, err := t.get(urlFor("/me/time_entries/current"))
 
 	if err != nil {
 		return nil, err
@@ -107,6 +91,29 @@ func (t *Toggl) CurrentTimer() (*Timer, error) {
 	timer := data.toTimer()
 	if timer.Id == 0 {
 		return nil, ErrNoTimer
+	}
+
+	return timer, nil
+}
+
+func (t *Toggl) AbortCurrentTimer() (*Timer, error) {
+	timer, err := t.CurrentTimer()
+	if err != nil {
+		return nil, err
+	}
+
+	url := urlFor("/workspaces/%d/time_entries/%d", timer.WorkspaceId, timer.Id)
+
+	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	if err != nil {
+		panic(err) // should not happen
+	}
+
+	res, err := t.doRequest(req)
+
+	if res.StatusCode != 200 {
+		fmt.Fprintln(os.Stderr, "bad response from delete:")
+		dumpResponseAndExit(res)
 	}
 
 	return timer, nil
