@@ -13,11 +13,12 @@ type Timer struct {
 	Description string
 	Tags        []string
 	WorkspaceId int
+	Project     string
 	duration    int64
 	projectId   int
 }
 
-func timerFromResponseBody(body io.Reader) (*Timer, error) {
+func (t *Toggl) timerFromResponseBody(body io.Reader) (*Timer, error) {
 	decoder := json.NewDecoder(body)
 
 	// we decode here into a struct with all public members, then hide some of
@@ -41,11 +42,17 @@ func timerFromResponseBody(body io.Reader) (*Timer, error) {
 		return nil, ErrNoTimer
 	}
 
+	project, ok := t.cfg.projectsById[data.ProjectId]
+	if !ok {
+		project = "--"
+	}
+
 	return &Timer{
 		Id:          data.Id,
 		Description: data.Description,
 		Tags:        data.Tags,
 		WorkspaceId: data.WorkspaceId,
+		Project:     project,
 		duration:    data.Duration,
 		projectId:   data.ProjectId,
 	}, nil
@@ -63,8 +70,6 @@ func (t Timer) Duration() time.Duration {
 }
 
 func (t Timer) OnelineDesc() string {
-	proj := "--" // TODO
-
 	tagStr := ""
 	if len(t.Tags) > 0 {
 		prefixed := make([]string, 0, len(t.Tags))
@@ -76,5 +81,5 @@ func (t Timer) OnelineDesc() string {
 		tagStr = ", " + strings.Join(prefixed, ", ")
 	}
 
-	return fmt.Sprintf("%s (%s%s)", t.Description, proj, tagStr)
+	return fmt.Sprintf("%s (%s%s)", t.Description, t.Project, tagStr)
 }
