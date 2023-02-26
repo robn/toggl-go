@@ -1,12 +1,9 @@
 package toggl
 
 import (
-	"errors"
 	"net/http"
 	"os"
 )
-
-var ErrBadStatus = errors.New("bad http status")
 
 func (t *Toggl) doRequest(req *http.Request) (*http.Response, error) {
 	// default headers
@@ -18,7 +15,8 @@ func (t *Toggl) doRequest(req *http.Request) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	} else if res.StatusCode >= 400 {
-		return nil, ErrBadStatus
+		// just bail, I'm never going to do anything useful with this.
+		dumpResponseAndExit(res)
 	}
 
 	return res, nil
@@ -30,12 +28,7 @@ func (t *Toggl) get(url string) (*http.Response, error) {
 		panic(err) // should not happen
 	}
 
-	res, err := t.doRequest(req)
-	if err != nil {
-		return nil, err
-	}
-
-	return res, nil
+	return t.doRequest(req)
 }
 
 func dumpResponseAndExit(res *http.Response) {
