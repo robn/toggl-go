@@ -13,9 +13,6 @@ var toggl *t.Toggl
 var rootCmd = &cobra.Command{
 	Use: "toggl",
 
-	// root command is only interesting as a container
-	Run: func(cmd *cobra.Command, args []string) { cmd.Help() },
-
 	// read config, etc.
 	PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 		if !cmd.HasParent() {
