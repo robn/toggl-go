@@ -14,34 +14,25 @@ type Timer struct {
 	Tags        []string
 	WorkspaceId int
 	Project     string
+	Start       time.Time
+	End         time.Time
 	duration    int64
 	projectId   int
 }
 
-func (t *Toggl) timerFromResponseBody(body io.Reader) (*Timer, error) {
-	decoder := json.NewDecoder(body)
+// We decode into a struct with all public members, then hide some of them publicly
+type timerData struct {
+	Id          int
+	Description string
+	Duration    int64
+	Start       time.Time
+	End         time.Time
+	ProjectId   int `json:"project_id"`
+	WorkspaceId int `json:"workspace_id"`
+	Tags        []string
+}
 
-	// we decode here into a struct with all public members, then hide some of
-	// them publicly
-	var data struct {
-		Id          int
-		Description string
-		Duration    int64
-		Start       time.Time
-		End         time.Time
-		ProjectId   int `json:"project_id"`
-		WorkspaceId int `json:"workspace_id"`
-		Tags        []string
-	}
-
-	if err := decoder.Decode(&data); err != nil {
-		return nil, err
-	}
-
-	if data.Id == 0 {
-		return nil, ErrNoTimer
-	}
-
+func (t *Toggl) timerFromData(data timerData) *Timer {
 	project, ok := t.Config.projectsById[data.ProjectId]
 	if !ok {
 		project = "--"
@@ -53,9 +44,42 @@ func (t *Toggl) timerFromResponseBody(body io.Reader) (*Timer, error) {
 		Tags:        data.Tags,
 		WorkspaceId: data.WorkspaceId,
 		Project:     project,
+		Start:       data.Start,
+		End:         data.End,
 		duration:    data.Duration,
 		projectId:   data.ProjectId,
-	}, nil
+	}
+}
+
+func (t *Toggl) timerFromResponseBody(body io.Reader) (*Timer, error) {
+	var data timerData
+	decoder := json.NewDecoder(body)
+
+	if err := decoder.Decode(&data); err != nil {
+		return nil, err
+	}
+
+	if data.Id == 0 {
+		return nil, ErrNoTimer
+	}
+
+	return t.timerFromData(data), nil
+}
+
+func (t *Toggl) timersFromResponseBody(body io.Reader) ([]*Timer, error) {
+	var data []timerData
+	decoder := json.NewDecoder(body)
+
+	if err := decoder.Decode(&data); err != nil {
+		return nil, err
+	}
+
+	ret := make([]*Timer, 0, len(data))
+	for _, td := range data {
+		ret = append(ret, t.timerFromData(td))
+	}
+
+	return ret, nil
 }
 
 func (t Timer) Duration() time.Duration {

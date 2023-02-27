@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 )
@@ -28,6 +29,7 @@ var (
 	ErrNoTimer = errors.New("no running timer")
 )
 
+// TODO return a url.URL here
 func urlFor(endpoint string, args ...any) string {
 	// https://api.track.toggl.com/api/v9/workspaces/{workspace_id}/time_entries/{time_entry_id}
 	return fmt.Sprintf("https://api.track.toggl.com/api/v9"+endpoint, args...)
@@ -80,6 +82,15 @@ func (t *Toggl) StartTimer(description string, projectId int, tag string) (*Time
 
 	defer res.Body.Close()
 	return t.timerFromResponseBody(res.Body)
+}
+
+func (t *Toggl) ResumeTimer(timer *Timer) (*Timer, error) {
+	tag := ""
+	if len(timer.Tags) > 0 {
+		tag = timer.Tags[0]
+	}
+
+	return t.StartTimer(timer.Description, timer.projectId, tag)
 }
 
 func (t *Toggl) CurrentTimer() (*Timer, error) {
@@ -146,4 +157,25 @@ func (t *Toggl) AbortCurrentTimer() (*Timer, error) {
 	}
 
 	return timer, nil
+}
+
+func (t *Toggl) TimeEntries(start, end time.Time) ([]*Timer, error) {
+	endpoint, err := url.Parse(urlFor("/me/time_entries"))
+	if err != nil {
+		panic(err)
+	}
+
+	params := url.Values{}
+	params.Add("start_date", start.UTC().Format(time.RFC3339))
+	params.Add("end_date", end.UTC().Format(time.RFC3339))
+	endpoint.RawQuery = params.Encode()
+
+	res, err := t.get(endpoint.String())
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer res.Body.Close()
+	return t.timersFromResponseBody(res.Body)
 }
