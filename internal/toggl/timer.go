@@ -42,7 +42,7 @@ func (t *Toggl) timerFromResponseBody(body io.Reader) (*Timer, error) {
 		return nil, ErrNoTimer
 	}
 
-	project, ok := t.cfg.projectsById[data.ProjectId]
+	project, ok := t.Config.projectsById[data.ProjectId]
 	if !ok {
 		project = "--"
 	}

@@ -10,6 +10,7 @@ import (
 
 type Config struct {
 	ApiToken         string         `toml:"api_token"`
+	WorkspaceId      int            `toml:"workspace_id"`
 	ProjectShortcuts map[string]int `toml:"project_shortcuts"`
 	projectsById     map[int]string
 }
@@ -33,23 +34,17 @@ func (t *Toggl) ReadConfig() error {
 		return fmt.Errorf("could not read config file: %w", err)
 	}
 
-	_, err = toml.Decode(string(tomlData), &t.cfg)
+	_, err = toml.Decode(string(tomlData), &t.Config)
 	if err != nil {
 		return fmt.Errorf("bad config file: %w", err)
 	}
 
 	byId := make(map[int]string)
-	for name, id := range t.cfg.ProjectShortcuts {
+	for name, id := range t.Config.ProjectShortcuts {
 		byId[id] = name
 	}
 
-	t.cfg.projectsById = byId
+	t.Config.projectsById = byId
 
 	return nil
-}
-
-// just a utility function which is only public so that it's easy to dump from
-// one of the commands
-func (t *Toggl) DebugConfig() {
-	fmt.Fprintf(os.Stderr, "%#v\n", t.cfg)
 }

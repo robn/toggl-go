@@ -8,7 +8,7 @@ import (
 func (t *Toggl) doRequest(req *http.Request) (*http.Response, error) {
 	// default headers
 	req.Header.Add("Accept", "application/json")
-	req.SetBasicAuth(t.cfg.ApiToken, "api_token")
+	req.SetBasicAuth(t.Config.ApiToken, "api_token")
 
 	res, err := t.client.Do(req)
 

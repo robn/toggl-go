@@ -8,13 +8,13 @@ import (
 )
 
 type Toggl struct {
+	Config Config
 	client http.Client
-	cfg    Config
 }
 
 func NewToggl() *Toggl {
 	return &Toggl{
-		cfg:    Config{},
+		Config: Config{},
 		client: http.Client{},
 	}
 }
