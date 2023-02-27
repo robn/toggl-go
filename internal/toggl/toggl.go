@@ -34,18 +34,24 @@ func urlFor(endpoint string, args ...any) string {
 }
 
 type startArgs struct {
-	Description string `json:"description"`
-	CreatedWith string `json:"created_with"`
-	Start       string `json:"start"`    // should maybe be time.Time, but wevs
-	Duration    int64  `json:"duration"` // silly
-	WorkspaceId int    `json:"workspace_id"`
-	ProjectId   int    `json:"project_id,omitempty"`
+	Description string   `json:"description"`
+	CreatedWith string   `json:"created_with"`
+	Start       string   `json:"start"`    // should maybe be time.Time, but wevs
+	Duration    int64    `json:"duration"` // silly
+	WorkspaceId int      `json:"workspace_id"`
+	ProjectId   int      `json:"project_id,omitempty"`
+	Tags        []string `json:"tags,omitempty"`
 }
 
-func (t *Toggl) StartTimer(description string, projectId int) (*Timer, error) {
+func (t *Toggl) StartTimer(description string, projectId int, tag string) (*Timer, error) {
 	url := urlFor("/workspaces/%d/time_entries", t.Config.WorkspaceId)
 
 	now := time.Now()
+
+	tags := []string{}
+	if tag != "" {
+		tags = append(tags, tag)
+	}
 
 	args := startArgs{
 		Description: description,
@@ -54,7 +60,7 @@ func (t *Toggl) StartTimer(description string, projectId int) (*Timer, error) {
 		Duration:    now.Unix() * -1,
 		WorkspaceId: t.Config.WorkspaceId,
 		ProjectId:   projectId,
-		// TODO tags
+		Tags:        tags,
 	}
 
 	data, err := json.Marshal(args)

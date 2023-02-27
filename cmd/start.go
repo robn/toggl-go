@@ -51,7 +51,17 @@ func runStart(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	timer, err := toggl.StartTimer(desc, projectId)
+	// tags
+	tag := ""
+	words := strings.Split(desc, " ")
+	last := words[len(words)-1]
+
+	if strings.HasPrefix(last, "#") {
+		tag = strings.TrimPrefix(last, "#")
+		desc = strings.Join(words[0:len(words)-1], " ")
+	}
+
+	timer, err := toggl.StartTimer(desc, projectId, tag)
 
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
