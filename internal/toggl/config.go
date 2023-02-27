@@ -9,9 +9,10 @@ import (
 )
 
 type Config struct {
-	ApiToken         string         `toml:"api_token"`
-	WorkspaceId      int            `toml:"workspace_id"`
-	ProjectShortcuts map[string]int `toml:"project_shortcuts"`
+	ApiToken         string                       `toml:"api_token"`
+	WorkspaceId      int                          `toml:"workspace_id"`
+	ProjectShortcuts map[string]int               `toml:"project_shortcuts"`
+	TaskShortcuts    map[string]map[string]string `toml:"task_shortcuts"`
 	projectsById     map[int]string
 }
 

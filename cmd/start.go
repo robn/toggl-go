@@ -35,6 +35,22 @@ func runStart(cmd *cobra.Command, args []string) error {
 		projectId = toggl.Config.ProjectShortcuts[opts.project]
 	}
 
+	// is this a shortcut
+	if strings.HasPrefix(desc, "@") {
+		shortcut, ok := toggl.Config.TaskShortcuts[strings.TrimPrefix(desc, "@")]
+
+		if !ok {
+			fmt.Printf("could not resolve shortcut %s\n", desc)
+			os.Exit(1)
+		}
+
+		// no error handling here, just don't mess up your config file, ok
+		desc = shortcut["desc"]
+		if proj, ok := shortcut["project"]; ok {
+			projectId = toggl.Config.ProjectShortcuts[proj]
+		}
+	}
+
 	timer, err := toggl.StartTimer(desc, projectId)
 
 	if err != nil {
