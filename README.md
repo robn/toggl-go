@@ -12,6 +12,8 @@ Usage:
 
 Available Commands:
   abort       actually, you weren't doing that thing after all
+  projects    list the buckets things can go in
+  shortcuts   list the things you can start easily
   start       start doing a new thing
   stop        stop doing the thing you're doing
   timer       what are you doing right now?

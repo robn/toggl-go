@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/BurntSushi/toml v1.2.1
 	github.com/spf13/cobra v1.6.1
+	golang.org/x/exp v0.0.0-20230224173230-c95f2b4c22f2
 )
 
 require (
