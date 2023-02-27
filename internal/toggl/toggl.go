@@ -8,7 +8,10 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sort"
 	"time"
+
+	"golang.org/x/exp/maps"
 )
 
 type Toggl struct {
@@ -178,4 +181,35 @@ func (t *Toggl) TimeEntries(start, end time.Time) ([]*Timer, error) {
 
 	defer res.Body.Close()
 	return t.timersFromResponseBody(res.Body)
+}
+
+func PrintEntryList(entries []*Timer) {
+	// we group by task, so we only report "read email" once even if it shows up
+	// 10 times in the list
+	grouped := map[string][]*Timer{}
+	for _, t := range entries {
+		k := fmt.Sprintf("%d!%s", t.projectId, t.Description)
+		grouped[k] = append(grouped[k], t)
+	}
+
+	keys := maps.Keys(grouped)
+	sort.Strings(keys)
+
+	var total time.Duration
+
+	for _, k := range keys {
+		entries := grouped[k]
+
+		var taskTotal time.Duration
+		for _, e := range entries {
+			taskTotal += e.Duration()
+		}
+
+		total += taskTotal
+
+		fmt.Printf("%5.2fh  %s\n", taskTotal.Hours(), entries[0].OnelineDesc())
+	}
+
+	fmt.Println("------")
+	fmt.Printf("%5.2fh  total (%s)\n", total.Hours(), total)
 }

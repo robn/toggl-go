@@ -94,6 +94,10 @@ func (t Timer) Duration() time.Duration {
 }
 
 func (t Timer) OnelineDesc() string {
+	if t.Description == "" && t.Project != "" {
+		return t.Project
+	}
+
 	tagStr := ""
 	if len(t.Tags) > 0 {
 		prefixed := make([]string, 0, len(t.Tags))
