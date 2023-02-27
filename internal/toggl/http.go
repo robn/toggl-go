@@ -10,6 +10,10 @@ func (t *Toggl) doRequest(req *http.Request) (*http.Response, error) {
 	req.Header.Add("Accept", "application/json")
 	req.SetBasicAuth(t.Config.ApiToken, "api_token")
 
+	if req.Body != nil {
+		req.Header.Add("Content-Type", "application/json")
+	}
+
 	res, err := t.client.Do(req)
 
 	if err != nil {

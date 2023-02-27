@@ -1,10 +1,13 @@
 package toggl
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 )
 
 type Toggl struct {
@@ -19,6 +22,8 @@ func NewToggl() *Toggl {
 	}
 }
 
+const UserAgent = "toggl/go v0"
+
 var (
 	ErrNoTimer = errors.New("no running timer")
 )
@@ -26,6 +31,49 @@ var (
 func urlFor(endpoint string, args ...any) string {
 	// https://api.track.toggl.com/api/v9/workspaces/{workspace_id}/time_entries/{time_entry_id}
 	return fmt.Sprintf("https://api.track.toggl.com/api/v9"+endpoint, args...)
+}
+
+type startArgs struct {
+	Description string `json:"description"`
+	CreatedWith string `json:"created_with"`
+	Start       string `json:"start"`    // should maybe be time.Time, but wevs
+	Duration    int64  `json:"duration"` // silly
+	WorkspaceId int    `json:"workspace_id"`
+	ProjectId   int    `json:"project_id,omitempty"`
+}
+
+func (t *Toggl) StartTimer(description string, projectId int) (*Timer, error) {
+	url := urlFor("/workspaces/%d/time_entries", t.Config.WorkspaceId)
+
+	now := time.Now()
+
+	args := startArgs{
+		Description: description,
+		CreatedWith: UserAgent,
+		Start:       now.UTC().Format("2006-01-02T15:04:05Z"),
+		Duration:    now.Unix() * -1,
+		WorkspaceId: t.Config.WorkspaceId,
+		ProjectId:   projectId,
+		// TODO tags
+	}
+
+	data, err := json.Marshal(args)
+	if err != nil {
+		return nil, fmt.Errorf("bogus json: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(data))
+	if err != nil {
+		panic(err)
+	}
+
+	res, err := t.doRequest(req)
+	if err != nil {
+		return nil, fmt.Errorf("bad post: %w", err)
+	}
+
+	defer res.Body.Close()
+	return t.timerFromResponseBody(res.Body)
 }
 
 func (t *Toggl) CurrentTimer() (*Timer, error) {
