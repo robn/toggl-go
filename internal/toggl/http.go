@@ -2,6 +2,7 @@ package toggl
 
 import (
 	"net/http"
+	"net/url"
 	"os"
 )
 
@@ -26,8 +27,8 @@ func (t *Toggl) doRequest(req *http.Request) (*http.Response, error) {
 	return res, nil
 }
 
-func (t *Toggl) get(url string) (*http.Response, error) {
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+func (t *Toggl) get(loc *url.URL) (*http.Response, error) {
+	req, err := http.NewRequest(http.MethodGet, loc.String(), nil)
 	if err != nil {
 		panic(err) // should not happen
 	}

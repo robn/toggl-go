@@ -32,10 +32,14 @@ var (
 	ErrNoTimer = errors.New("no running timer")
 )
 
-// TODO return a url.URL here
-func urlFor(endpoint string, args ...any) string {
-	// https://api.track.toggl.com/api/v9/workspaces/{workspace_id}/time_entries/{time_entry_id}
-	return fmt.Sprintf("https://api.track.toggl.com/api/v9"+endpoint, args...)
+func urlFor(endpoint string, args ...any) *url.URL {
+	raw := fmt.Sprintf("https://api.track.toggl.com/api/v9"+endpoint, args...)
+	u, err := url.Parse(raw)
+	if err != nil {
+		panic(err)
+	}
+
+	return u
 }
 
 type startArgs struct {
@@ -61,7 +65,7 @@ func (t *Toggl) StartTimer(description string, projectId int, tag string) (*Time
 	args := startArgs{
 		Description: description,
 		CreatedWith: UserAgent,
-		Start:       now.UTC().Format("2006-01-02T15:04:05Z"),
+		Start:       now.UTC().Format(time.RFC3339),
 		Duration:    now.Unix() * -1,
 		WorkspaceId: t.Config.WorkspaceId,
 		ProjectId:   projectId,
@@ -73,7 +77,7 @@ func (t *Toggl) StartTimer(description string, projectId int, tag string) (*Time
 		return nil, fmt.Errorf("bogus json: %w", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(data))
+	req, err := http.NewRequest(http.MethodPost, url.String(), bytes.NewBuffer(data))
 	if err != nil {
 		panic(err)
 	}
@@ -113,9 +117,9 @@ func (t *Toggl) StopCurrentTimer() (*Timer, error) {
 		return nil, err
 	}
 
-	url := urlFor("/workspaces/%d/time_entries/%d/stop", timer.WorkspaceId, timer.Id)
+	loc := urlFor("/workspaces/%d/time_entries/%d/stop", timer.WorkspaceId, timer.Id)
 
-	req, err := http.NewRequest(http.MethodPatch, url, nil)
+	req, err := http.NewRequest(http.MethodPatch, loc.String(), nil)
 	if err != nil {
 		panic(err) // should not happen
 	}
@@ -141,9 +145,9 @@ func (t *Toggl) AbortCurrentTimer() (*Timer, error) {
 		return nil, err
 	}
 
-	url := urlFor("/workspaces/%d/time_entries/%d", timer.WorkspaceId, timer.Id)
+	loc := urlFor("/workspaces/%d/time_entries/%d", timer.WorkspaceId, timer.Id)
 
-	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	req, err := http.NewRequest(http.MethodDelete, loc.String(), nil)
 	if err != nil {
 		panic(err) // should not happen
 	}
@@ -163,17 +167,14 @@ func (t *Toggl) AbortCurrentTimer() (*Timer, error) {
 }
 
 func (t *Toggl) TimeEntries(start, end time.Time) ([]*Timer, error) {
-	endpoint, err := url.Parse(urlFor("/me/time_entries"))
-	if err != nil {
-		panic(err)
-	}
+	loc := urlFor("/me/time_entries")
 
 	params := url.Values{}
 	params.Add("start_date", start.UTC().Format(time.RFC3339))
 	params.Add("end_date", end.UTC().Format(time.RFC3339))
-	endpoint.RawQuery = params.Encode()
+	loc.RawQuery = params.Encode()
 
-	res, err := t.get(endpoint.String())
+	res, err := t.get(loc)
 
 	if err != nil {
 		return nil, err
