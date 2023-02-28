@@ -20,7 +20,7 @@ func init() {
 }
 
 func runToday(cmd *cobra.Command, args []string) {
-	start := time.Now().Truncate(24 * time.Hour)
+	start := startOfToday()
 	end := time.Now()
 
 	entries, err := toggl.TimeEntries(start, end)
