@@ -31,7 +31,7 @@ var rootCmd = &cobra.Command{
 func Execute() {
 	// hide all the root help, it's just in the way
 	rootCmd.InitDefaultHelpFlag()
-	rootCmd.Flags().MarkHidden("help")
+	_ = rootCmd.Flags().MarkHidden("help") // will not fail; we know --help exists
 	rootCmd.SetHelpCommand(&cobra.Command{Hidden: true})
 
 	if err := rootCmd.Execute(); err != nil {
