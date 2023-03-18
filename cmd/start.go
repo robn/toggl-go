@@ -23,7 +23,11 @@ var opts struct {
 
 func init() {
 	startCmd.Flags().StringVarP(&opts.project, "project", "p", "", "project shortcut for this task")
-	startCmd.Flags().StringVarP(&opts.id, "id", "i", "", "jira id for this task")
+
+	if JIRA_ENABLED {
+		startCmd.Flags().StringVarP(&opts.id, "id", "i", "", "jira id for this task")
+	}
+
 	rootCmd.AddCommand(startCmd)
 }
 
@@ -35,7 +39,7 @@ func runStart(cmd *cobra.Command, args []string) error {
 		return errors.New("need a description")
 	}
 
-	if opts.id != "" || likelyId.MatchString(desc) {
+	if JIRA_ENABLED && (opts.id != "" || likelyId.MatchString(desc)) {
 		id := opts.id
 		if id == "" {
 			id = desc
@@ -78,12 +82,6 @@ func runStart(cmd *cobra.Command, args []string) error {
 
 	startTask(desc, projectId, tag)
 	return nil
-}
-
-func startJiraTask(taskId string) {
-	c := toggl.Config.NewJiraClient()
-	issue := c.GetIssue(taskId)
-	startTask(issue.PrettyDescription(), issue.TogglProjectId, "")
 }
 
 func startTask(desc string, projectId int, tag string) {

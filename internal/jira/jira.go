@@ -1,3 +1,5 @@
+//go:build jira
+
 package jira
 
 import (
