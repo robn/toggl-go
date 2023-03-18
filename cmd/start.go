@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -17,17 +18,31 @@ var startCmd = &cobra.Command{
 
 var opts struct {
 	project string
+	id      string
 }
 
 func init() {
 	startCmd.Flags().StringVarP(&opts.project, "project", "p", "", "project shortcut for this task")
+	startCmd.Flags().StringVarP(&opts.id, "id", "i", "", "jira id for this task")
 	rootCmd.AddCommand(startCmd)
 }
+
+var likelyId = regexp.MustCompile(`(?i)^[a-z]{3,}-[0-9]+$`)
 
 func runStart(cmd *cobra.Command, args []string) error {
 	desc := strings.Join(args, " ")
 	if len(desc) == 0 {
 		return errors.New("need a description")
+	}
+
+	if opts.id != "" || likelyId.MatchString(desc) {
+		id := opts.id
+		if id == "" {
+			id = desc
+		}
+
+		startJiraTask(id)
+		return nil
 	}
 
 	projectId := 0
@@ -61,6 +76,17 @@ func runStart(cmd *cobra.Command, args []string) error {
 		desc = strings.Join(words[0:len(words)-1], " ")
 	}
 
+	startTask(desc, projectId, tag)
+	return nil
+}
+
+func startJiraTask(taskId string) {
+	c := toggl.Config.NewJiraClient()
+	issue := c.GetIssue(taskId)
+	startTask(issue.PrettyDescription(), issue.TogglProjectId, "")
+}
+
+func startTask(desc string, projectId int, tag string) {
 	timer, err := toggl.StartTimer(desc, projectId, tag)
 
 	if err != nil {
@@ -69,6 +95,4 @@ func runStart(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Printf("started timer: %s\n", timer.OnelineDesc())
-
-	return nil
 }
