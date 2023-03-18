@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
+	"github.com/mmmcclimon/toggl-go/internal/jira"
 )
 
 type Config struct {
@@ -13,6 +14,7 @@ type Config struct {
 	WorkspaceId      int                          `toml:"workspace_id"`
 	ProjectShortcuts map[string]int               `toml:"project_shortcuts"`
 	TaskShortcuts    map[string]map[string]string `toml:"task_shortcuts"`
+	JiraConfig       *jira.Config                 `toml:"jira"`
 	projectsById     map[int]string
 }
 
@@ -48,4 +50,14 @@ func (t *Toggl) ReadConfig() error {
 	t.Config.projectsById = byId
 
 	return nil
+}
+
+func (cfg *Config) NewJiraClient() *jira.Client {
+	jiraConf := cfg.JiraConfig
+	if jiraConf == nil || jiraConf.URL == "" || jiraConf.ConsumerKey == "" {
+		fmt.Fprintln(os.Stderr, "Unable to create jira client without jira config")
+		os.Exit(1)
+	}
+
+	return jira.NewClient(jiraConf)
 }
