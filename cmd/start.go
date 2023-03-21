@@ -56,10 +56,13 @@ func runStart(cmd *cobra.Command, args []string) error {
 
 	// is this a shortcut
 	if strings.HasPrefix(desc, "@") {
-		shortcut, ok := toggl.Config.TaskShortcuts[strings.TrimPrefix(desc, "@")]
+		fields := strings.Fields(desc)
+		sc := fields[0]
+
+		shortcut, ok := toggl.Config.TaskShortcuts[strings.TrimPrefix(sc, "@")]
 
 		if !ok {
-			fmt.Printf("could not resolve shortcut %s\n", desc)
+			fmt.Printf("could not resolve shortcut %s\n", sc)
 			os.Exit(1)
 		}
 
@@ -67,6 +70,11 @@ func runStart(cmd *cobra.Command, args []string) error {
 		desc = shortcut["desc"]
 		if proj, ok := shortcut["project"]; ok {
 			projectId = toggl.Config.ProjectShortcuts[proj]
+		}
+
+		// add back on the tag, if there is one
+		if len(fields) > 1 {
+			desc += " " + strings.Join(fields[1:], " ")
 		}
 	}
 
