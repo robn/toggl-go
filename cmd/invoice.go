@@ -39,7 +39,7 @@ func runInvoice(cmd *cobra.Command, args []string) {
 	}
 
 	// group by week
-	grouped := map[string][]*t.Timer{}
+	byWeek := map[string][]*t.Timer{}
 	for _, t := range entries {
 		entryStart := t.Start
 		// Back up til we hit a Monday
@@ -47,14 +47,49 @@ func runInvoice(cmd *cobra.Command, args []string) {
 			entryStart = entryStart.Add(-24 * time.Hour)
 		}
 		k := entryStart.Format("2006-01-02")
-		grouped[k] = append(grouped[k], t)
+		byWeek[k] = append(byWeek[k], t)
 	}
 
-	keys := maps.Keys(grouped)
+	keys := maps.Keys(byWeek)
 	sort.Strings(keys)
 
-	for _, k := range keys {
-		fmt.Println(k)
-		t.PrintEntryList(grouped[k])
+	var invoiceTotal time.Duration
+
+	for _, weekDate := range keys {
+		fmt.Printf("\nweek of: %s\n", weekDate)
+
+		weekEntries := byWeek[weekDate]
+
+		// group by project
+		byProject := map[int][]*t.Timer{}
+		for _, t := range weekEntries {
+			byProject[t.ProjectId] =
+			    append(byProject[t.ProjectId], t)
+		}
+
+		keys := maps.Keys(byProject)
+		sort.Ints(keys)
+
+		var weekTotal time.Duration
+
+		for _, projectId := range keys {
+			entries := byProject[projectId]
+
+			var projectTotal time.Duration
+			for _, e := range entries {
+				projectTotal += e.Duration()
+			}
+			weekTotal += projectTotal
+
+			fmt.Printf("%10d  %5.2fh  %s\n", projectId,
+			    projectTotal.Hours(), entries[0].OnelineDesc())
+		}
+
+		fmt.Println("            ------")
+		fmt.Printf("            %5.2fh\n", weekTotal.Hours())
+
+		invoiceTotal += weekTotal
 	}
+
+	fmt.Printf("\ninvoice total: %5.2fh\n", invoiceTotal.Hours())
 }

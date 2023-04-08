@@ -97,7 +97,7 @@ func (t *Toggl) ResumeTimer(timer *Timer) (*Timer, error) {
 		tag = timer.Tags[0]
 	}
 
-	return t.StartTimer(timer.Description, timer.projectId, tag)
+	return t.StartTimer(timer.Description, timer.ProjectId, tag)
 }
 
 func (t *Toggl) CurrentTimer() (*Timer, error) {
@@ -189,7 +189,7 @@ func PrintEntryList(entries []*Timer) {
 	// 10 times in the list
 	grouped := map[string][]*Timer{}
 	for _, t := range entries {
-		k := fmt.Sprintf("%d!%s", t.projectId, t.Description)
+		k := fmt.Sprintf("%d!%s", t.ProjectId, t.Description)
 		grouped[k] = append(grouped[k], t)
 	}
 

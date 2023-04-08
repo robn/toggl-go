@@ -17,7 +17,7 @@ type Timer struct {
 	Start       time.Time
 	End         time.Time
 	duration    int64
-	projectId   int
+	ProjectId   int
 }
 
 // We decode into a struct with all public members, then hide some of them publicly
@@ -47,7 +47,7 @@ func (t *Toggl) timerFromData(data timerData) *Timer {
 		Start:       data.Start,
 		End:         data.End,
 		duration:    data.Duration,
-		projectId:   data.ProjectId,
+		ProjectId:   data.ProjectId,
 	}
 }
 
