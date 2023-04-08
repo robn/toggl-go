@@ -38,6 +38,12 @@ func runInvoice(cmd *cobra.Command, args []string) {
 		return
 	}
 
+	projects, err := toggl.WorkspaceProjects()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
 	// group by week
 	byWeek := map[string][]*t.Timer{}
 	for _, t := range entries {
@@ -87,8 +93,8 @@ func runInvoice(cmd *cobra.Command, args []string) {
 			}
 			weekTotal += projectTotal
 
-			fmt.Printf("%10d  %5.2fh  %s\n", projectId,
-			    projectTotal.Hours(), entries[0].OnelineDesc())
+			fmt.Printf("%-40s  %5.2fh\n",
+			    projects[projectId].Name, projectTotal.Hours())
 		}
 
 		fmt.Println("            ------")

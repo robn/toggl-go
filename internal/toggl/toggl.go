@@ -184,6 +184,18 @@ func (t *Toggl) TimeEntries(start, end time.Time) ([]*Timer, error) {
 	return t.timersFromResponseBody(res.Body)
 }
 
+func (t *Toggl) WorkspaceProjects() (map[int]Project, error) {
+	loc := urlFor("/workspaces/%d/projects", t.Config.WorkspaceId)
+
+	res, err := t.get(loc)
+	if err != nil {
+		return nil, err
+	}
+
+	defer res.Body.Close()
+	return t.projectsFromResponseBody(res.Body)
+}
+
 func PrintEntryList(entries []*Timer) {
 	// we group by task, so we only report "read email" once even if it shows up
 	// 10 times in the list
