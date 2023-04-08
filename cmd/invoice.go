@@ -3,10 +3,12 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"sort"
 	"time"
 
 	t "github.com/mmmcclimon/toggl-go/internal/toggl"
 	"github.com/spf13/cobra"
+	"golang.org/x/exp/maps"
 )
 
 var invoiceCmd = &cobra.Command{
@@ -36,5 +38,23 @@ func runInvoice(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	t.PrintEntryList(entries)
+	// group by week
+	grouped := map[string][]*t.Timer{}
+	for _, t := range entries {
+		entryStart := t.Start
+		// Back up til we hit a Monday
+		for entryStart.Weekday() != time.Monday {
+			entryStart = entryStart.Add(-24 * time.Hour)
+		}
+		k := entryStart.Format("2006-01-02")
+		grouped[k] = append(grouped[k], t)
+	}
+
+	keys := maps.Keys(grouped)
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		fmt.Println(k)
+		t.PrintEntryList(grouped[k])
+	}
 }
