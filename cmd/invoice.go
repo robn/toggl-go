@@ -77,7 +77,8 @@ func runInvoice(cmd *cobra.Command, args []string) {
 
 			var projectTotal time.Duration
 			for _, e := range entries {
-				projectTotal += e.Duration()
+				projectTotal +=
+				    e.Duration().Round(15*time.Minute)
 			}
 			weekTotal += projectTotal
 
