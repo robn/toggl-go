@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"sort"
 	"time"
 
@@ -93,8 +94,20 @@ func runInvoice(cmd *cobra.Command, args []string) {
 			}
 			weekTotal += projectTotal
 
-			fmt.Printf("%-40s  %5.2fh\n",
-			    projects[projectId].Name, projectTotal.Hours())
+			// this is very specific to my client
+			projectItems :=
+			    regexp.MustCompile(" - ?").
+			    Split(projects[projectId].Name, 2)
+			code := projectItems[0]
+			var desc string
+			if (len(projectItems) > 1) {
+				desc = projectItems[1]
+			} else {
+				desc = ""
+			}
+
+			fmt.Printf("%-10s  %-30s  %5.2fh\n",
+			    code, desc, projectTotal.Hours())
 		}
 
 		fmt.Println("            ------")
