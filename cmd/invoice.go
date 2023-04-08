@@ -41,6 +41,11 @@ func runInvoice(cmd *cobra.Command, args []string) {
 	// group by week
 	byWeek := map[string][]*t.Timer{}
 	for _, t := range entries {
+		// exclude non-billable
+		if (!t.Billable) {
+			continue
+		}
+
 		entryStart := t.Start
 		// Back up til we hit a Monday
 		for entryStart.Weekday() != time.Monday {

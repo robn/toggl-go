@@ -18,6 +18,7 @@ type Timer struct {
 	End         time.Time
 	duration    int64
 	ProjectId   int
+	Billable    bool
 }
 
 // We decode into a struct with all public members, then hide some of them publicly
@@ -27,6 +28,7 @@ type timerData struct {
 	Duration    int64
 	Start       time.Time
 	End         time.Time
+	Billable    bool `json:"billable"`
 	ProjectId   int `json:"project_id"`
 	WorkspaceId int `json:"workspace_id"`
 	Tags        []string
@@ -46,6 +48,7 @@ func (t *Toggl) timerFromData(data timerData) *Timer {
 		Project:     project,
 		Start:       data.Start,
 		End:         data.End,
+		Billable:    data.Billable,
 		duration:    data.Duration,
 		ProjectId:   data.ProjectId,
 	}
