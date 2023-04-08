@@ -50,7 +50,7 @@ func Execute() {
 // in a local time zone.
 func startOfToday() time.Time {
 	now := time.Now() // always in Local zone
-	format := time.DateOnly
+	format := "2006-01-02"
 	midnight, _ := time.ParseInLocation(format, now.Format(format), time.Local)
 	return midnight
 }
