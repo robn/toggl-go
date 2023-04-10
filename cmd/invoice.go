@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/csv"
 	"fmt"
 	"os"
 	"regexp"
@@ -45,6 +46,8 @@ func runInvoice(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
+	w := csv.NewWriter(os.Stdout)
+
 	// group by week
 	byWeek := map[string][]*t.Timer{}
 	for _, t := range entries {
@@ -68,8 +71,6 @@ func runInvoice(cmd *cobra.Command, args []string) {
 	var invoiceTotal time.Duration
 
 	for _, weekDate := range keys {
-		fmt.Printf("\nweek of: %s\n", weekDate)
-
 		weekEntries := byWeek[weekDate]
 
 		// group by project
@@ -106,15 +107,18 @@ func runInvoice(cmd *cobra.Command, args []string) {
 				desc = ""
 			}
 
-			fmt.Printf("%-10s  %-30s  %5.2fh\n",
-			    code, desc, projectTotal.Hours())
-		}
+			record := make([]string, 4)
+			record[0] = weekDate
+			record[1] = code
+			record[2] = desc
+			record[3] = fmt.Sprintf("%.2f", projectTotal.Hours())
+			w.Write(record)
 
-		fmt.Println("            ------")
-		fmt.Printf("            %5.2fh\n", weekTotal.Hours())
+			weekDate = ""
+		}
 
 		invoiceTotal += weekTotal
 	}
 
-	fmt.Printf("\ninvoice total: %5.2fh\n", invoiceTotal.Hours())
+	w.Flush()
 }
