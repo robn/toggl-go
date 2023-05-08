@@ -56,7 +56,7 @@ func runInvoice(cmd *cobra.Command, args []string) {
 			continue
 		}
 
-		entryStart := t.Start
+		entryStart := t.Start.Local()
 		// Back up til we hit a Monday
 		for entryStart.Weekday() != time.Monday {
 			entryStart = entryStart.Add(-24 * time.Hour)
