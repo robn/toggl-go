@@ -59,6 +59,11 @@ func runInvoice(cmd *cobra.Command, args []string) {
 		entryStart := t.Start.Local()
 		// Back up til we hit a Monday
 		for entryStart.Weekday() != time.Monday {
+			var prev = entryStart.Add(-24 * time.Hour)
+			if prev.Month() != entryStart.Month() {
+				// but not into the previous month
+				break
+			}
 			entryStart = entryStart.Add(-24 * time.Hour)
 		}
 		k := entryStart.Format("2006-01-02")
